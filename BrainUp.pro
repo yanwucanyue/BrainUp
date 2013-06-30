@@ -13,8 +13,14 @@ TEMPLATE = app
 
 
 SOURCES += main.cpp\
-        mainwindow.cpp
+        mainwindow.cpp \
+    model/CRecordData.cpp \
+    controller/CRecordCtrl.cpp \
+    model/CRecognizeDate.cpp
 
-HEADERS  += mainwindow.h
+HEADERS  += mainwindow.h \
+    model/CRecordData.h \
+    controller/CRecordCtrl.h \
+    model/CRecognizeDate.h
 
 FORMS    += mainwindow.ui
