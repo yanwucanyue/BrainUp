@@ -10,6 +10,7 @@
 #include <QObject>
 #include <QVector>
 #include <QBuffer>
+#include <QAudioInput>
 
 #define MAX_REC_SEC_NUM 32 /**< 最大录音段数 */
 #define SECOND_PER_SEC 5 /**< 每段最大录音数 */
@@ -24,10 +25,38 @@ public:
      */
     enum DatStatus
     {
-        SECTION_NOT_READY, /**< 该编号对应的数据还没有准备好 */
-        SECTION_READY,     /**< 该编号对应的数据已经准备好，但是未被读取 */
-        SECTION_HAS_READ   /**< 该编号对应的数据已经准备好并被读取 */
+        SEC_NOT_RDY, /**< 该编号对应的数据还没有准备好 */
+        SEC_RDY,     /**< 该编号对应的数据已经准备好，但是未被读取 */
+        SEC_HAS_READ   /**< 该编号对应的数据已经准备好并被读取 */
     };
+
+    /**
+     * @brief WAV头文件
+    typedef struct
+    {
+        char fccID[4]; //"RIFF"
+        unsigned long dwSize;//length-8
+        char fccType[4]; //"WAVE"
+    }HEADER;
+
+    typedef struct
+    {
+        char fccID[4]; //"fmt "
+        unsigned long dwSize; //16
+        unsigned short wFormatTag; //1
+        unsigned short wChannels; //1 or 2
+        unsigned long dwSamplesPerSec; //44100
+        unsigned long dwAvgBytesPerSec; //
+        unsigned short wBlockAlign; //声道数*量化数/8
+        unsigned short uiBitsPerSample; //量化数 8 or 16
+    }FMT;
+
+    typedef struct
+    {
+        char fccID[4]; //"data"
+        unsigned long dwSize; //length-44
+    }DATA;
+
 
     /**
      * @brief 构造函数。
@@ -59,13 +88,48 @@ public:
      * @param iNumOfRecDatSec 段序号。
      * @return 对应的QBuffer数据指针。
      */
-    QBuffer* GetRecDataSec(int iNumOfRecDatSec);
+    QBuffer* GetRecDataSec(int iNumOfRecDatSec) const;
+
+    /**
+     * @brief 获取对应段序号的状态。
+     * @param iNumOfRecDatSec 段序号。
+     * @return 对应的状态。
+     */
+    DatStatus GetDatSecStat(int iNumOfRecDatSec) const;
 
     /**
      * @brief m_iNumOfRecDatSec的getter。
-     * @return m_iNumOfRecDatSec的值
+     * @return m_iNumOfRecDatSec的值。
      */
     int GetNumOfRecDatSec() const;
+
+private:
+    /**
+     * @brief m_iNumOfRecDatSec的setter,私有，不允许外部修改值。
+     * @param iNumOfRecDatSec 设置值。
+     */
+    void SetNumofRecDatSec(int iNumOfRecDatSec);
+
+    /**
+     * @brief SetRecDatSec 设置对应段序号的数据。
+     * @param index 储存数据的段序号。
+     * @param pRecDatSec 需要储存的数据。
+     */
+    void SetRecDatSec(int index, QBuffer* pRecDatSec);
+
+    /**
+     * @brief SetDatSecStat 设置对应段序号数据的状态。
+     * @param index 储存状态的段序号。
+     * @param iDatSecStat 更改的状态。
+     */
+    void SetDatSecStat(int index, DatStatus iDatSecStat);
+
+    /**
+     * @brief 将录音的RAW数据转换为带文件头的WAV数据
+     * @param bufRawRecord 储存RAW数据的缓存
+     * @return 带文件头的WAV数据缓存
+     */
+    QBuffer* Raw2Wav(QBuffer* bufRawRecord);
 
 private:
     /**
